@@ -1,9 +1,13 @@
 package main
 
 import (
+	"mymodule/app/database"
 	"mymodule/controller"
+	"mymodule/exception"
+	"mymodule/helper"
 	"mymodule/repository"
 	"mymodule/service"
+	"net/http"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/julienschmidt/httprouter"
@@ -11,6 +15,7 @@ import (
 
 func main() {
 
+	db := database.NewDB()
 	validate := validator.New()
 	categoryRepository := repository.NewCategoryRepository()
 	categoryService := service.NewCategoryService(categoryRepository, db, validate)
@@ -22,4 +27,15 @@ func main() {
 	router.POST("/api/categories", categoryController.Create)
 	router.PUT("/api/categories/:categoryId", categoryController.Update)
 	router.DELETE("/api/categories/:categoryId", categoryController.Delete)
+
+	router.PanicHandler = exception.ErrorHandler
+
+	server := http.Server {
+		Addr: "localhost:3000",
+		Handler: router,
+	}
+
+	err := server.ListenAndServe()
+
+	helper.PanicIfError(err)
 }

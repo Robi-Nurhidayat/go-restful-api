@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"mymodule/exception"
 	"mymodule/helper"
 	"mymodule/model/domain"
 )
@@ -16,7 +17,7 @@ func NewCategoryRepository() CategoryRepository {
 }
 
 func (repository *CategoryRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, category domain.Category) domain.Category {
-	SQL := "insert into category values(?)"
+	SQL := "insert into category(name) values(?)"
 
 	result, err := tx.ExecContext(ctx, SQL, category.Name)
 
@@ -34,7 +35,9 @@ func (repository *CategoryRepositoryImpl) Update(ctx context.Context, tx *sql.Tx
 
 	_, err := tx.ExecContext(ctx, SQL, category.Name, category.Id)
 
-	helper.PanicIfError(err)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
 
 	return category
 }
@@ -42,15 +45,19 @@ func (repository *CategoryRepositoryImpl) Delete(ctx context.Context, tx *sql.Tx
 	SQL := "delete from category where id = ?"
 	_, err := tx.ExecContext(ctx, SQL, category.Id)
 
-	helper.PanicIfError(err)
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
 }
 func (repository *CategoryRepositoryImpl) FindById(ctx context.Context, tx *sql.Tx, id int) (domain.Category, error) {
 	SQL := "select id, name from category where id = ?"
 
 	rows, err := tx.QueryContext(ctx, SQL, id)
 
-	helper.PanicIfError(err)
-
+	if err != nil {
+		panic(exception.NewNotFoundError(err.Error()))
+	}
+	defer rows.Close()
 	category := domain.Category{}
 
 	if rows.Next() {
@@ -61,6 +68,8 @@ func (repository *CategoryRepositoryImpl) FindById(ctx context.Context, tx *sql.
 		return category, errors.New("category is not found")
 	}
 
+	
+
 }
 func (repository *CategoryRepositoryImpl) FindAll(ctx context.Context, tx *sql.Tx) []domain.Category {
 
@@ -69,6 +78,7 @@ func (repository *CategoryRepositoryImpl) FindAll(ctx context.Context, tx *sql.T
 	rows, err := tx.QueryContext(ctx, SQL)
 	helper.PanicIfError(err)
 
+	defer rows.Close()
 	var categories []domain.Category
 	for rows.Next() {
 		category := domain.Category{}

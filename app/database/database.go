@@ -1,8 +1,26 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"mymodule/helper"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+)
 
 func NewDB() *sql.DB {
 
-	sql.Open("mysql", "root:@tcp(localhost:3306)/")
+	db ,err := sql.Open("mysql", "root:@tcp(localhost:3306)/golang_restful_api")
+	helper.PanicIfError(err)
+
+	db.SetConnMaxIdleTime(60 * time.Minute)
+	db.SetConnMaxIdleTime(10 * time.Minute)
+	db.SetMaxIdleConns(5)
+	db.SetMaxOpenConns(20)
+
+	
+
+
+	return db
+
 }
