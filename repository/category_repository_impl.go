@@ -35,6 +35,7 @@ func (repository *CategoryRepositoryImpl) Update(ctx context.Context, tx *sql.Tx
 
 	_, err := tx.ExecContext(ctx, SQL, category.Name, category.Id)
 
+	
 	if err != nil {
 		panic(exception.NewNotFoundError(err.Error()))
 	}
