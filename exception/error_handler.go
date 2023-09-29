@@ -4,11 +4,17 @@ import (
 	"mymodule/helper"
 	"mymodule/model/web"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func ErrorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 
 	if notFoundError(w,r,err) {
+		return
+	}
+
+	if validationError(w,r,err) {
 		return
 	}
 
@@ -18,7 +24,7 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 
 func notFoundError(w http.ResponseWriter, r *http.Request, err interface{}) bool {
 
-	exception,ok := err.(NotFoundError)
+	notFoundStatus,ok := err.(NotFoundError)
 	if ok {
 		w.Header().Set("Content-Type","application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -26,7 +32,7 @@ func notFoundError(w http.ResponseWriter, r *http.Request, err interface{}) bool
 		WebResponse := web.WebResponse{
 			Code: http.StatusNotFound,
 			Status: "NOT FOUND",
-			Data: exception.Error,
+			Data: notFoundStatus.Error,
 		}
 	
 		helper.WriteToResponseBody(w,WebResponse)
@@ -35,6 +41,26 @@ func notFoundError(w http.ResponseWriter, r *http.Request, err interface{}) bool
 		return false
 	}
 	
+}
+
+func validationError(w http.ResponseWriter, r *http.Request, err interface{}) bool {
+	badReq,ok := err.(validator.ValidationErrors)
+
+	if ok {
+		w.Header().Set("Content-Type","application/json")
+		w.WriteHeader(http.StatusBadRequest)
+	
+		WebResponse := web.WebResponse{
+			Code: http.StatusBadRequest,
+			Status: "BAD REQUEST",
+			Data: badReq.Error(),
+		}
+	
+		helper.WriteToResponseBody(w,WebResponse)
+		return true
+	}else {
+		return false
+	}
 }
 
 func internalServerError(w http.ResponseWriter, r *http.Request, err interface{}) {
